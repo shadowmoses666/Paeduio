@@ -1,0 +1,702 @@
+{
+	"info": {
+		"_postman_id": "3863acf5-f191-448c-8fbf-5b7e2848cdf8",
+		"name": "PAEDUIO TESTCASE COLLECTION",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32625651"
+	},
+	"item": [
+		{
+			"name": "登录",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"IP = pm.environment.get(\"IP\");\r",
+							"username = pm.environment.get(\"username\");\r",
+							"\r",
+							"// AES 192bit ECB PKCS7\r",
+							"function encrypt_AES_192_ECB(content, keyStr) {\r",
+							"    var srcs = CryptoJS.enc.Utf8.parse(content);\r",
+							"\r",
+							"    // 将密钥字符串转换为 WordArray\r",
+							"    var keyWordArray = CryptoJS.enc.Utf8.parse(keyStr);\r",
+							"\r",
+							"    // AES-192 需要 24 字节的密钥，即 192 位\r",
+							"    var aes192KeySize = 192 / 8; // 24 字节\r",
+							"    var requiredKeySizeWords = aes192KeySize / 4; // WordArray 使用32位字\r",
+							"\r",
+							"    // 计算填充的字节数\r",
+							"    var paddingSize = requiredKeySizeWords * 4 - keyWordArray.sigBytes;\r",
+							"\r",
+							"    // 使用0填充密钥直到达到 AES-192 的长度\r",
+							"    var paddedKeyWordArray = CryptoJS.lib.WordArray.create(keyWordArray.words.concat(CryptoJS.lib.WordArray.random(paddingSize)));\r",
+							"\r",
+							"    // 截断或保留前 192 位\r",
+							"    if (paddedKeyWordArray.sigBytes > aes192KeySize) {\r",
+							"        paddedKeyWordArray = paddedKeyWordArray.clamp();\r",
+							"    }\r",
+							"\r",
+							"    var encrypted = CryptoJS.AES.encrypt(srcs, paddedKeyWordArray, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7});\r",
+							"    return encrypted.toString();\r",
+							"}\r",
+							"\r",
+							"// AES 128bit ECB PKCS7\r",
+							"function encrypt_AES_128_ECB(content, keyStr) {\r",
+							"    var srcs = CryptoJS.enc.Utf8.parse(content);\r",
+							"    var key = CryptoJS.enc.Utf8.parse(keyStr);\r",
+							"\r",
+							"    var encrypted = CryptoJS.AES.encrypt(srcs, key, {mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7});\r",
+							"    return encrypted.toString();\r",
+							"}\r",
+							"\r",
+							"// 从环境变量中获取明文密码和密钥\r",
+							"var password = pm.environment.get(\"password\");\r",
+							"var secretkey = pm.environment.get(\"secretkey\");\r",
+							"\r",
+							"// 调用encrypt函数对密码进行加密\r",
+							"encryptedText = encrypt_AES_192_ECB(password, secretkey);\r",
+							"\r",
+							"// 将加密结果设置到环境变量 aes:password\r",
+							"pm.globals.set(\"aes:password\", encryptedText);\r",
+							"console.log(\"AES:password = \"+encryptedText);   // 打印加密结果\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Extract token$freshToken from response\", function () {  \r",
+							"    var jsonData = pm.response.json();  \r",
+							"    var token = jsonData.data.token;\r",
+							"    var freshToken = jsonData.data.freshToken;    \r",
+							"    pm.globals.set(\"token\", token); // 将 token 存储全局变量中\r",
+							"    pm.globals.set(\"freshToken\", freshToken); // 将 freshToken 存储到全局变量中  \r",
+							"});\r",
+							"\r",
+							"//断言\r",
+							"//状态断言\r",
+							"pm.test(\"检查返回状态码为200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"//业务断言\r",
+							"pm.test(\"检查响应中包括token\", function () {\r",
+							"    pm.expect(pm.response.text()).to.include(\"token\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"password\": \"{{aes:password}}\",\r\n\t\"username\": \"{{username}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/login",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "查询分区组信息",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Extract groupId from response\", function () {   \r",
+							"    var jsonData = pm.response.json();  \r",
+							"    var groupId = jsonData.data[0].id; // 提取第一个元素的id  \r",
+							"    pm.globals.set(\"groupId\", groupId); // 将groupId存储为全局变量  \r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "default",
+						"disabled": true
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "default",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://{{IP}}/external/group?limit&page",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"group"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": null
+						},
+						{
+							"key": "page",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "查询分区信息",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Extract Device id from response\", function () {  \r",
+							"    var jsonData = pm.response.json();  \r",
+							"    var DeviceId = jsonData.data[0].id; // 提取第一个元素的id  \r",
+							"    pm.globals.set(\"DeviceId\", DeviceId); // 将Deviceid存储为全局变量  \r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "default",
+						"disabled": true
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "default",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://{{IP}}/external/zone?limit&page",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"zone"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": null
+						},
+						{
+							"key": "page",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "查询分区详情",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "default",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://{{IP}}/external/zone/info?id={{DeviceId}}",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"zone",
+						"info"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "{{DeviceId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "设置分区音量",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\": \"{{DeviceId}}\",\r\n    \"volume\": 50\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/zone",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"zone"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "查询预设任务",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Extract taskid from response\", function () {  \r",
+							"    var jsonData = pm.response.json();  \r",
+							"    var taskid = jsonData.data[0].id; // 提取第一个元素的id  \r",
+							"    pm.globals.set(\"taskid\", taskid); // 将taskid存储为全局变量  \r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					}
+				],
+				"url": {
+					"raw": "http://{{IP}}/external/pretask?limit&page&type=1",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"pretask"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": null
+						},
+						{
+							"key": "page",
+							"value": null
+						},
+						{
+							"key": "type",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "开始广播",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Extract token$freshToken from response\", function () {  \r",
+							"    var jsonData = pm.response.json();  \r",
+							"    var taskdata = jsonData.data;   \r",
+							"    pm.globals.set(\"taskdata\", taskdata); // 将 taskdata 存储到全局变量中\r",
+							"\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					},
+					{
+						"key": "",
+						"value": "",
+						"type": "default",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"groups\": [{{groupId}}],\r\n\t\"id\": {{taskid}}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/task",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"task"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "停止广播",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\t\"id\": {{taskdata}}\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/task",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"task"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "获取系统状态",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/status",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "刷新",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Extract freshToken from response\", function () {  \r",
+							"    var jsonData = pm.response.json();  \r",
+							"    var token = jsonData.data.token;\r",
+							"    var freshToken = jsonData.data.freshToken; \r",
+							"    pm.globals.set(\"token\", token); // 将 token 存储全局变量中  \r",
+							"    pm.globals.set(\"freshToken\", freshToken); // 将 flushedtoken 存储全局变量中\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"freshToken\": \"{{freshToken}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/refresh",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"refresh"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "登出",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{IP}}/external/logout",
+					"protocol": "http",
+					"host": [
+						"{{IP}}"
+					],
+					"path": [
+						"external",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
