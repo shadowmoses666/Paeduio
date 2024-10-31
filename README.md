@@ -4,7 +4,7 @@ Bosch Paeduio PA system open interface package
 博世派迪系列公共广播系统开放接口开发资料
 
 提前准备：
-Postman软件安装
+Postman软件
 Postman官网下载地址：https://www.getpostman.com/downloads
 
 安装Postman（Windows系统）
