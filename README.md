@@ -3,6 +3,21 @@ Bosch Paeduio PA system open interface package
 
 博世派迪系列公共广播系统开放接口开发资料
 
+Postman软件安装
+下载Postman
+官网下载地址：https://www.getpostman.com/downloads
+
+安装Postman（Windows系统）
+
+运行安装程序：下载完成后，双击安装包（如.exe文件）开始安装。
+
+遵循安装向导：按照安装向导的指示，选择安装路径（虽然默认可能是C盘，但你可以选择其他位置），同意使用条款，按需选择是否创建桌面快捷方式等。
+
+完成安装：点击“Install”按钮进行安装。安装完成后，根据提示重启Postman或直接启动。
+
+
+
+
 **功能概述**
 
 需求：
